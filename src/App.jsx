@@ -1,36 +1,12 @@
-import { socket } from './socket';
-import { useEffect, useState } from 'react';
-import MyFrom from './components/MyForm';
+import HomePage from '@pages/Chat/chat.page';
+import useNotifi from './hooks/useNotifi';
 
 function App() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
 
-  useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-    };
-  }, []);
+  useNotifi();
 
   return (
-    <>
-      <button onClick={() => socket.connect()}>Connect</button>
-      <button onClick={() => socket.disconnect()}>Disconnect</button>
-      <p>State: {'' + isConnected}</p>
-
-      <MyFrom />
-    </>
+    <HomePage />
   );
 }
 

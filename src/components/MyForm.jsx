@@ -1,35 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { socket } from '../socket';
+import { socket } from '@services/socket.service';
 
 
 export default function MyForm() {
-  const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState();
   const [socketID, setSocketID] = useState();
   const { register, handleSubmit } = useForm();
 
-  const enteredUsername = (data) => {
-    setUsername(data?.username);
-    socket.emit('setUsername', data);
-  };
-
-  const sendMessage = (data) => {
-    setIsLoading(true);
+  const handleSendMessage = (data) => {
     console.log("🍅 data Sent", data);
     socket.emit('message', data);
   };
 
+  const handleSetUsername = (data) => {
+    window.location.search = `?u=${data.username}`;
+  };
 
   const [messageEvents, setMessageEvents] = useState([]);
   function onMessageEvent(value) {
-    setIsLoading(false);
     setMessageEvents(previous => [...previous, value]);
   }
   function onUsernameEvent(value) {
-    setSocketID(value);
+    setSocketID(value); // FIXME: should be auto update after reconnect
   }
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const usernameParam = urlParams.get('u');
+    setUsername(usernameParam);
+    document.title = `user ${usernameParam}`;
+    socket.emit('setUsername', { username: usernameParam });
+
     socket.on('message', onMessageEvent);
     socket.on('setUsername', onUsernameEvent);
     return () => {
@@ -44,9 +45,10 @@ export default function MyForm() {
         ? <div className="enter-name-div">
           <h1>Enter Your Name</h1>
           <input type="text" {...register("username")} />
-          <button onClick={handleSubmit(enteredUsername)}>Start</button>
+          <button onClick={handleSubmit(handleSetUsername)}>Start</button>
         </div>
         : <>
+          <button onClick={() => setUsername()}>change username</button>
           <h1>Hi '{username}' with socket ID '{socketID}'</h1>
           <ul>
             {
@@ -65,8 +67,7 @@ export default function MyForm() {
               <label>Message: </label>
               <input type='text' {...register("message")} />
             </div>
-            {isLoading && <p>Loading...</p>}
-            <button onClick={handleSubmit(sendMessage)} disabled={isLoading}>Send</button>
+            <button onClick={handleSubmit(handleSendMessage)}>Send</button>
           </form>
         </>
       }
